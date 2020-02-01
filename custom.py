@@ -26,7 +26,7 @@ def __function_loader(mod_path, func_name, mod_name='mod'):
 
     return eval(func_str)
 
-def __keras_grad_cam():
+def __keras_grad_cam(input_image):
     model_definition = __function_loader(
         MODEL_SOURCE_PATH,
         MODEL_SOURCE_DEFINITION)
@@ -48,21 +48,19 @@ def __keras_grad_cam():
       #          IMAGE_SOURCE_DEFINITION
        #         )
 
-    with open (INPUT_IMAGE,'rb') as i:
-        IMAGE = i
 
-        k_util.show_predicted_class(model, [IMAGE], image_to_arr)
-
-        results = k_grad_cam.exec(
+    k_util.show_predicted_class(model, [input_image], image_to_arr)
+    
+    results = k_grad_cam.exec(
                 model,
                 LAYERS,
-                [IMAGE],
+                [input_image],
                 image_to_arr)
 
-    return results, IMAGE, model.name
+    return results, model.name
 
-def keras_grad_cam(fp):
-    results, image, model_name = __keras_grad_cam()
+def keras_grad_cam(input_image):
+    results, model_name = __keras_grad_cam(input_image)
 
     print ('+==========================+')
     print ('+==========================+')
@@ -89,7 +87,9 @@ def keras_grad_cam(fp):
             
 if __name__ == '__main__':
     import os
-    res = keras_grad_cam('')
+    
+    with open('hydrant.jpg', 'rb') as f:
+        res = keras_grad_cam(f)
 
     for d in res:
         with open(os.path.join(d['model_name'] + '-' + d['layer'] +  '.png'),'wb') as f:
