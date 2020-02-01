@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-
 import numpy as np
 from keras import models
 from keras.engine.training import Model
@@ -54,7 +53,7 @@ def show_predicted_class(model, image_paths, preprocessing=None):
         predicted_class = model.predict(input_image)
         
         # show predicted class 
-        print_str = "image: {0}, class: {1}".format(
-            os.path.basename(image_path), 
+        print_str = "image class: {0}".format(
+            #os.path.basename(image_path), 
             np.argmax(predicted_class))
         print(print_str)
