@@ -5,6 +5,16 @@ MODEL_SOURCE_DEFINITION='vgg16'
 IMAGE_PATH='./examples/images'
 LAYERS = ['block5_conv3','block4_conv3']
 
+import cv2
+import importlib.machinery as im_machinery
+import types
+import keras_pkg.grad_cam as k_grad_cam
+import keras_pkg.util as k_util
+from keras.applications.vgg16 import preprocess_input
+from keras.preprocessing import image
+import numpy as np
+from io import BytesIO
+
 def __function_loader(mod_path, func_name, mod_name='mod'):
     loader = im_machinery.SourceFileLoader(mod_name, mod_path)
     mod = types.ModuleType(loader.name)
@@ -16,54 +26,73 @@ def __function_loader(mod_path, func_name, mod_name='mod'):
 
     return eval(func_str)
 
-import cv2
-import importlib.machinery as im_machinery
-import types
-import keras_pkg.grad_cam as k_grad_cam
-import keras_pkg.util as k_util
+def __keras_grad_cam():
+    model_definition = __function_loader(
+        MODEL_SOURCE_PATH,
+        MODEL_SOURCE_DEFINITION)
+    # get model from source code
+    model = k_util.get_model(
+        PARAMS,
+        model_definition([224,224],3,1000))
 
-#model = k_util.get_model(PARAMS)
+    model.summary()
 
+    def image_to_arr(path, shape):
+        img = image.load_img(path, target_size=shape[0:2])
+        x = image.img_to_array(img)
+        x = preprocess_input(x)
+        return x
 
-model_definition = __function_loader(
-    MODEL_SOURCE_PATH,
-    MODEL_SOURCE_DEFINITION)
-# get model from source code
-model = k_util.get_model(
-    PARAMS,
-    model_definition([224,224],3,1000))
+    #preprocessing_func = __function_loader(
+     #           IMAGE_SOURCE_PATH,
+      #          IMAGE_SOURCE_DEFINITION
+       #         )
 
+    with open (INPUT_IMAGE,'rb') as i:
+        IMAGE = i
 
-model.summary()
+        k_util.show_predicted_class(model, [IMAGE], image_to_arr)
 
-from keras.applications.vgg16 import preprocess_input
-from keras.preprocessing import image
-import numpy as np
+        results = k_grad_cam.exec(
+                model,
+                LAYERS,
+                [IMAGE],
+                image_to_arr)
 
-#from keras_preprocessing_utils import load_img
+    return results, IMAGE, model.name
 
-def image_to_arr(path, shape):
-    img = image.load_img(path, target_size=shape[0:2])
-    x = image.img_to_array(img)
-    x = preprocess_input(x)
-    return x
+def keras_grad_cam(fp):
+    results, image, model_name = __keras_grad_cam()
 
-#preprocessing_func = __function_loader(
- #           IMAGE_SOURCE_PATH,
-  #          IMAGE_SOURCE_DEFINITION
-   #         )
+    print ('+==========================+')
+    print ('+==========================+')
+    outputs = []
 
-with open (INPUT_IMAGE,'rb') as i:
-    IMAGE = i
+    for (layer_idx, layer_results) in enumerate(results):
+        for (cam_idx, (cam, heatmap)) in enumerate(layer_results): 
+            
+            d = {}
 
-    k_util.show_predicted_class(model, [IMAGE], image_to_arr)
+            d['model_name'] = model_name
+            d['layer'] = LAYERS[layer_idx]
+            
+            # cv2.imwrite(os.path.join(config.image.output, output_name), cam
 
-    results = k_grad_cam.exec(
-            model,
-            LAYERS,
-            [IMAGE],
-            image_to_arr)
+            is_success, output_stream = cv2.imencode(".jpg", cam)
+            io_buff = BytesIO(output_stream)
+            
+            d['file'] = io_buff.read()
 
-print ('=================')
+            outputs.append(d)
 
-print (results,  model.name)
+    return outputs
+            
+if __name__ == '__main__':
+    import os
+    res = keras_grad_cam('')
+
+    for d in res:
+        with open(os.path.join(d['model_name'] + '-' + d['layer'] +  '.png'),'wb') as f:
+            f.write(d['file'])
+
+    
