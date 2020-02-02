@@ -1,10 +1,12 @@
 PARAMS = './example/model/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
-INPUT_IMAGE = './example/images/hydrant.jpg'
 MODEL_SOURCE_PATH='./example/src/vgg16.py'
 MODEL_SOURCE_DEFINITION='vgg16'
-IMAGE_PATH='./examples/images'
 LAYERS = ['block5_conv3','block4_conv3']
-
+ARGS = [
+        [224,224], # image size
+        3, # channel
+        1000 # classes
+       ]
 import cv2
 import importlib.machinery as im_machinery
 import types
@@ -33,7 +35,8 @@ def __keras_grad_cam(input_image):
     # get model from source code
     model = k_util.get_model(
         PARAMS,
-        model_definition([224,224],3,1000))
+        model_definition(*ARGS)
+        )
 
     model.summary()
 
