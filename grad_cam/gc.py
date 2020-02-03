@@ -83,6 +83,9 @@ def keras_grad_cam(input_image):
             io_buff = BytesIO(output_stream)
             
             d['file'] = io_buff.read()
+            
+            d['cam'] = cam
+            d['heatmap'] = heatmap
 
             outputs.append(d)
 
