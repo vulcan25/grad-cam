@@ -1,6 +1,11 @@
-PARAMS = './example/model/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
-MODEL_SOURCE_PATH='./example/src/vgg16.py'
-MODEL_SOURCE_DEFINITION='vgg16'
+#PARAMS = './example/model/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
+#MODEL_SOURCE_PATH='./example/src/vgg16.py'
+#MODEL_SOURCE_DEFINITION='vgg16'
+
+PARAMS  ='/model_data/yolo_weights.h5'
+MODEL_SOURCE_PATH='/code/yolo3/model.py'
+MODEL_SOURCE_DEFINITION='yolo_body'
+
 LAYERS = ['block5_conv3','block4_conv3']
 ARGS = [
         [224,224], # image size
@@ -29,6 +34,7 @@ def __function_loader(mod_path, func_name, mod_name='mod'):
     return eval(func_str)
 
 def __keras_grad_cam(input_image):
+    """
     model_definition = __function_loader(
         MODEL_SOURCE_PATH,
         MODEL_SOURCE_DEFINITION)
@@ -37,11 +43,12 @@ def __keras_grad_cam(input_image):
         PARAMS,
         model_definition(*ARGS)
         )
-
+    """
+    model = k_util.get_model(PARAMS)
     model.summary()
 
     def image_to_arr(path, shape):
-        img = image.load_img(path, target_size=shape[0:2])
+        img = image.load_img(path)#, target_size=shape[0:2])
         x = image.img_to_array(img)
         x = preprocess_input(x)
         return x
